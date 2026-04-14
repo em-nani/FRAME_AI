@@ -3,26 +3,26 @@ import { Link, useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
 import { Input } from '../components/ui/input';
-import { Card } from '../components/ui/card';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Sparkles, 
-  ArrowLeft, 
-  Loader2,
-  Upload,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  File,
-  X,
-  Paperclip,
-  ChevronDown,
-  ChevronUp,
-  Plus
+  Sparkles, ArrowLeft, Loader2, Upload, Image as ImageIcon,
+  Link as LinkIcon, File, X, Paperclip, ChevronDown, ChevronUp,
+  Users, Camera, DollarSign, Palette, Clock, CheckSquare
 } from 'lucide-react';
 import { generateProjectFromPrompt } from '../lib/ai-mock';
 import { useProjects } from '../lib/project-context';
 import { Attachment } from '../lib/types';
 
 const examplePrompt = "A luxury streetwear lookbook campaign. 3 models, rooftop location, golden hour. Moody editorial with film grain aesthetic. We need 30 final images and a 60-second reel.";
+
+const generatingSteps = [
+  { icon: Palette, label: 'Moodboard & visual references' },
+  { icon: Users, label: 'Call sheet & crew breakdown' },
+  { icon: Camera, label: 'Shot list & locations' },
+  { icon: DollarSign, label: 'Budget estimate' },
+  { icon: Clock, label: 'Pre & post production timeline' },
+  { icon: CheckSquare, label: 'Deliverables tracker' },
+];
 
 export default function NewProject() {
   const navigate = useNavigate();
@@ -32,20 +32,26 @@ export default function NewProject() {
   const [linkInput, setLinkInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
+  const [generatingStep, setGeneratingStep] = useState(0);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-
     setIsGenerating(true);
+    setGeneratingStep(0);
     
+    const stepInterval = setInterval(() => {
+      setGeneratingStep(s => Math.min(s + 1, generatingSteps.length - 1));
+    }, 350);
+
     try {
       const project = await generateProjectFromPrompt(prompt);
-      // Add attachments to the project
       project.attachments = attachments;
       addProject(project);
+      clearInterval(stepInterval);
       navigate(`/workspace/${project.id}`);
     } catch (error) {
       console.error('Error generating project:', error);
+      clearInterval(stepInterval);
     } finally {
       setIsGenerating(false);
     }
@@ -54,433 +60,265 @@ export default function NewProject() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
-    const newAttachments: Attachment[] = Array.from(files).map(file => {
-      const isImage = file.type.startsWith('image/');
-      const url = URL.createObjectURL(file);
-      
-      return {
-        id: `${Date.now()}-${Math.random()}`,
-        type: isImage ? 'image' : 'file',
-        name: file.name,
-        url: url,
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-      };
-    });
-
+    const newAttachments: Attachment[] = Array.from(files).map(file => ({
+      id: `${Date.now()}-${Math.random()}`,
+      type: file.type.startsWith('image/') ? 'image' : 'file',
+      name: file.name,
+      url: URL.createObjectURL(file),
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+    }));
     setAttachments([...attachments, ...newAttachments]);
     if (!showAttachments) setShowAttachments(true);
   };
 
   const handleAddLink = () => {
     if (!linkInput.trim()) return;
-
-    const newLink: Attachment = {
+    setAttachments([...attachments, {
       id: `${Date.now()}-${Math.random()}`,
-      type: 'link',
-      name: linkInput,
-      url: linkInput,
+      type: 'link', name: linkInput, url: linkInput,
       uploadedAt: new Date().toISOString(),
-    };
-
-    setAttachments([...attachments, newLink]);
+    }]);
     setLinkInput('');
   };
 
   const handleRemoveAttachment = (id: string) => {
-    const attachment = attachments.find(a => a.id === id);
-    if (attachment && attachment.type !== 'link') {
-      URL.revokeObjectURL(attachment.url);
-    }
+    const a = attachments.find(a => a.id === id);
+    if (a && a.type !== 'link') URL.revokeObjectURL(a.url);
     setAttachments(attachments.filter(a => a.id !== id));
   };
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '';
     const mb = bytes / (1024 * 1024);
-    if (mb < 1) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-    return `${mb.toFixed(1)} MB`;
+    return mb < 1 ? `${(bytes / 1024).toFixed(1)} KB` : `${mb.toFixed(1)} MB`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-        <div className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-slate-700 rounded-xl flex items-center justify-center shadow-lg shadow-slate-900/30">
-              <span className="font-bold text-white text-lg">F</span>
-            </div>
-            <span className="font-bold text-2xl text-slate-900">FRAME</span>
+      <header className="border-b border-zinc-800 bg-black/90 backdrop-blur-md sticky top-0 z-10">
+        <div className="mx-auto max-w-4xl px-6 py-5 flex items-center justify-between">
+          <Link to="/">
+            <span className="text-2xl tracking-tighter text-white">FRAME</span>
           </Link>
           <Link to="/dashboard">
-            <Button variant="ghost" className="gap-2 text-slate-700 hover:text-cyan-600 font-medium">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+            <Button variant="ghost" className="gap-2 text-zinc-500 hover:text-white hover:bg-zinc-800 text-sm rounded-full">
+              <ArrowLeft className="w-4 h-4" />Dashboard
             </Button>
           </Link>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-5xl px-6 py-16">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-slate-300 text-slate-700 text-sm mb-8 shadow-lg font-medium">
-            <Sparkles className="w-4 h-4 text-cyan-600" />
+      <main className="mx-auto max-w-4xl px-6 py-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-700 bg-zinc-900 text-zinc-400 text-xs mb-8 tracking-wide">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             AI Campaign Generator
           </div>
-          
-          <h1 className="text-6xl font-bold mb-6 tracking-tight">
-            <span className="text-slate-900">Describe your </span>
-            <span className="bg-gradient-to-r from-cyan-600 to-cyan-500 bg-clip-text text-transparent">campaign</span>
+          <h1 className="text-6xl tracking-tighter text-white mb-5">
+            Describe your <span className="text-cyan-400">campaign</span>
           </h1>
-          
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-zinc-500 text-lg max-w-xl mx-auto leading-relaxed">
             Tell us about your creative vision and we'll generate a complete production plan in seconds
           </p>
-        </div>
+        </motion.div>
 
-        <Card className="bg-white border-2 border-slate-200 p-10 mb-8 shadow-xl">
-          <label className="block text-base font-semibold text-slate-900 mb-4">
-            Campaign Prompt
-          </label>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 mb-6">
+          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-widest mb-4">Campaign Brief</label>
           <Textarea
             placeholder="e.g., A luxury streetwear lookbook campaign. 3 models, rooftop location, golden hour. Moody editorial with film grain aesthetic..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[220px] bg-white border-2 border-slate-200 text-slate-900 placeholder:text-slate-400 resize-none focus:border-cyan-400 focus:ring-cyan-400 text-base leading-relaxed"
+            className="min-h-[220px] bg-zinc-950 border border-zinc-800 text-white placeholder:text-zinc-700 resize-none focus:border-cyan-600 focus:ring-0 text-base leading-relaxed rounded-xl"
             disabled={isGenerating}
           />
 
-          <div className="flex items-center justify-between mt-6">
-            <Button
-              variant="ghost"
-              size="sm"
+          <div className="flex items-center justify-between mt-4">
+            <button
               onClick={() => setPrompt(examplePrompt)}
               disabled={isGenerating}
-              className="text-cyan-700 hover:text-cyan-600 hover:bg-cyan-50 font-medium"
+              className="text-xs text-zinc-600 hover:text-cyan-400 transition-colors"
             >
-              Use example prompt
-            </Button>
+              Use example prompt →
+            </button>
+            <span className="text-xs text-zinc-700">{prompt.length} chars</span>
           </div>
 
-          {/* Collapsible Attachments Section */}
-          <div className="mt-8 pt-8 border-t-2 border-slate-100">
+          {/* Attachments */}
+          <div className="mt-8 pt-6 border-t border-zinc-800">
             <button
               onClick={() => setShowAttachments(!showAttachments)}
               disabled={isGenerating}
               className="w-full flex items-center justify-between text-left group"
             >
               <div className="flex items-center gap-3">
-                <Paperclip className="w-5 h-5 text-cyan-600" />
-                <span className="text-base font-semibold text-slate-900">
-                  Add Reference Materials (Optional)
+                <Paperclip className="w-4 h-4 text-zinc-600" />
+                <span className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors">
+                  Add Reference Materials
                 </span>
                 {attachments.length > 0 && (
-                  <span className="px-2.5 py-1 bg-cyan-100 text-cyan-700 text-xs font-semibold rounded-full">
+                  <span className="px-2 py-0.5 bg-cyan-900/50 text-cyan-400 text-xs rounded-full border border-cyan-800">
                     {attachments.length}
                   </span>
                 )}
               </div>
-              {showAttachments ? (
-                <ChevronUp className="w-5 h-5 text-slate-400 group-hover:text-cyan-600 transition-colors" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-slate-400 group-hover:text-cyan-600 transition-colors" />
-              )}
+              {showAttachments ? <ChevronUp className="w-4 h-4 text-zinc-600" /> : <ChevronDown className="w-4 h-4 text-zinc-600" />}
             </button>
 
-            {showAttachments && (
-              <div className="mt-6">
-                <p className="text-slate-600 mb-6">
-                  Upload mood board images, reference files, or add links to Pinterest boards, design references, or inspiration
-                </p>
-
-                {/* Upload Buttons */}
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <div>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,application/pdf,.doc,.docx"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                      disabled={isGenerating}
-                    />
-                    <label htmlFor="file-upload">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="gap-2 border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-cyan-400 font-medium cursor-pointer"
-                        disabled={isGenerating}
-                        asChild
-                      >
-                        <span>
-                          <Upload className="w-4 h-4" />
-                          Upload Files
-                        </span>
-                      </Button>
-                    </label>
-                  </div>
-
-                  <div>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="image-upload"
-                      disabled={isGenerating}
-                    />
-                    <label htmlFor="image-upload">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="gap-2 border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-cyan-400 font-medium cursor-pointer"
-                        disabled={isGenerating}
-                        asChild
-                      >
-                        <span>
-                          <ImageIcon className="w-4 h-4" />
-                          Upload Images
-                        </span>
-                      </Button>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Link Input */}
-                <div className="flex gap-3 mb-6">
-                  <Input
-                    type="url"
-                    value={linkInput}
-                    onChange={(e) => setLinkInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
-                    placeholder="https://pinterest.com/board/... or any reference link"
-                    className="flex-1 bg-white border-2 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-cyan-400 focus:ring-cyan-400"
-                    disabled={isGenerating}
-                  />
-                  <Button
-                    onClick={handleAddLink}
-                    disabled={!linkInput.trim() || isGenerating}
-                    variant="outline"
-                    className="gap-2 border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-cyan-400 font-medium"
-                  >
-                    <LinkIcon className="w-4 h-4" />
-                    Add Link
-                  </Button>
-                </div>
-
-                {/* Attachments Display */}
-                {attachments.length > 0 && (
-                  <div className="pt-4 border-t-2 border-slate-100">
-                    {/* Image Previews */}
-                    {attachments.some(a => a.type === 'image') && (
-                      <div className="mb-6">
-                        <p className="text-sm text-slate-600 mb-3 font-medium">Images</p>
-                        <div className="grid grid-cols-4 gap-4">
-                          {attachments.filter(a => a.type === 'image').map((attachment) => (
-                            <div key={attachment.id} className="relative group">
-                              <div className="aspect-square rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-50 shadow-md">
-                                <img
-                                  src={attachment.url}
-                                  alt={attachment.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <button
-                                onClick={() => handleRemoveAttachment(attachment.id)}
-                                className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                disabled={isGenerating}
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                              <p className="text-xs text-slate-600 mt-2 truncate">{attachment.name}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* File List */}
-                    {attachments.some(a => a.type === 'file') && (
-                      <div className="mb-6">
-                        <p className="text-sm text-slate-600 mb-3 font-medium">Files</p>
-                        <div className="space-y-2">
-                          {attachments.filter(a => a.type === 'file').map((attachment) => (
-                            <div key={attachment.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 group hover:border-cyan-400 transition-colors">
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className="w-9 h-9 bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                                  <File className="w-4 h-4 text-white" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-slate-900 truncate">{attachment.name}</p>
-                                  <p className="text-xs text-slate-600">{formatFileSize(attachment.size)}</p>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => handleRemoveAttachment(attachment.id)}
-                                className="w-7 h-7 bg-white border-2 border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ml-3 flex-shrink-0"
-                                disabled={isGenerating}
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Links List */}
-                    {attachments.some(a => a.type === 'link') && (
+            <AnimatePresence>
+              {showAttachments && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-5">
+                    <p className="text-zinc-600 text-sm mb-5">Upload mood board images, reference files, or add inspiration links</p>
+                    <div className="flex flex-wrap gap-3 mb-5">
                       <div>
-                        <p className="text-sm text-slate-600 mb-3 font-medium">Links</p>
-                        <div className="space-y-2">
-                          {attachments.filter(a => a.type === 'link').map((attachment) => (
-                            <div key={attachment.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-xl border-2 border-cyan-200 group hover:border-cyan-400 transition-colors">
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className="w-9 h-9 bg-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                                  <LinkIcon className="w-4 h-4 text-white" />
+                        <input type="file" multiple accept="image/*,application/pdf,.doc,.docx" onChange={handleFileUpload} className="hidden" id="file-upload" disabled={isGenerating} />
+                        <label htmlFor="file-upload">
+                          <Button type="button" variant="outline" size="sm" className="gap-2 border border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white bg-transparent text-xs rounded-full cursor-pointer" disabled={isGenerating} asChild>
+                            <span><Upload className="w-3.5 h-3.5" />Upload Files</span>
+                          </Button>
+                        </label>
+                      </div>
+                      <div>
+                        <input type="file" multiple accept="image/*" onChange={handleFileUpload} className="hidden" id="image-upload" disabled={isGenerating} />
+                        <label htmlFor="image-upload">
+                          <Button type="button" variant="outline" size="sm" className="gap-2 border border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white bg-transparent text-xs rounded-full cursor-pointer" disabled={isGenerating} asChild>
+                            <span><ImageIcon className="w-3.5 h-3.5" />Upload Images</span>
+                          </Button>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 mb-5">
+                      <Input
+                        type="url" value={linkInput}
+                        onChange={(e) => setLinkInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
+                        placeholder="https://pinterest.com/board/..."
+                        className="flex-1 bg-zinc-950 border border-zinc-800 text-white placeholder:text-zinc-700 text-sm focus:border-cyan-600 rounded-full px-4"
+                        disabled={isGenerating}
+                      />
+                      <Button onClick={handleAddLink} disabled={!linkInput.trim() || isGenerating} variant="outline" size="sm" className="gap-2 border border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white bg-transparent text-xs rounded-full px-4">
+                        <LinkIcon className="w-3.5 h-3.5" />Add
+                      </Button>
+                    </div>
+
+                    {attachments.length > 0 && (
+                      <div className="space-y-2">
+                        {attachments.filter(a => a.type === 'image').length > 0 && (
+                          <div className="grid grid-cols-5 gap-3 mb-4">
+                            {attachments.filter(a => a.type === 'image').map(a => (
+                              <div key={a.id} className="relative group">
+                                <div className="aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
+                                  <img src={a.url} alt={a.name} className="w-full h-full object-cover" />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <a
-                                    href={attachment.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm font-medium text-cyan-700 hover:text-cyan-800 truncate block"
-                                  >
-                                    {attachment.name}
-                                  </a>
-                                </div>
+                                <button onClick={() => handleRemoveAttachment(a.id)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <X className="w-3 h-3" />
+                                </button>
                               </div>
-                              <button
-                                onClick={() => handleRemoveAttachment(attachment.id)}
-                                className="w-7 h-7 bg-white border-2 border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ml-3 flex-shrink-0"
-                                disabled={isGenerating}
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {attachments.filter(a => a.type !== 'image').map(a => (
+                          <div key={a.id} className="flex items-center justify-between p-3 bg-zinc-950 rounded-xl border border-zinc-800 group">
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 bg-zinc-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                                {a.type === 'link' ? <LinkIcon className="w-3.5 h-3.5 text-cyan-400" /> : <File className="w-3.5 h-3.5 text-zinc-400" />}
+                              </div>
+                              <span className="text-xs text-zinc-400 truncate max-w-xs">{a.name}</span>
                             </div>
-                          ))}
-                        </div>
+                            <button onClick={() => handleRemoveAttachment(a.id)} className="w-5 h-5 text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </Card>
+        </motion.div>
 
-        {/* Generate Button */}
-        <div className="flex justify-end mb-8">
+        {/* Generate */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex justify-end mb-8">
           <Button
             onClick={handleGenerate}
             disabled={!prompt.trim() || isGenerating}
-            className="gap-2 bg-cyan-600 hover:bg-cyan-700 shadow-lg shadow-cyan-600/30 px-10 py-7 h-auto text-lg text-white"
+            className="gap-2 bg-cyan-500 hover:bg-cyan-400 disabled:bg-zinc-800 disabled:text-zinc-600 px-10 py-6 h-auto text-base text-white rounded-full transition-all"
           >
             {isGenerating ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Generating Your Plan...
-              </>
+              <><Loader2 className="w-5 h-5 animate-spin" />Generating Your Plan...</>
             ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Generate Production Plan
-              </>
+              <><Sparkles className="w-5 h-5" />Generate Production Plan</>
             )}
           </Button>
-        </div>
+        </motion.div>
+
+        {/* Generating state */}
+        <AnimatePresence>
+          {isGenerating && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span className="text-white text-sm tracking-wide">Building your production package</span>
+              </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                {generatingSteps.map(({ icon: Icon, label }, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0.3 }}
+                    animate={{ opacity: i <= generatingStep ? 1 : 0.3 }}
+                    className="flex items-center gap-3 text-sm"
+                  >
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${i <= generatingStep ? 'bg-cyan-500' : 'bg-zinc-800'}`}>
+                      <Icon className="w-3 h-3 text-white" />
+                    </div>
+                    <span className={i <= generatingStep ? 'text-white' : 'text-zinc-600'}>{label}</span>
+                    {i < generatingStep && <span className="ml-auto text-cyan-400 text-xs">✓</span>}
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Tips */}
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-8 shadow-lg">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="w-10 h-10 bg-cyan-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
+        {!isGenerating && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 mt-4">
+            <div className="flex items-start gap-3 mb-5">
+              <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+              <span className="text-zinc-400 text-xs tracking-widest uppercase">Tips for better results</span>
             </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg mb-3">Tips for better results</h3>
-              <ul className="space-y-3 text-slate-700">
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-600 font-bold mt-0.5">•</span>
-                  <span>Include the type of campaign (lookbook, commercial, editorial, etc.)</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-600 font-bold mt-0.5">•</span>
-                  <span>Specify number of models/talent needed</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-600 font-bold mt-0.5">•</span>
-                  <span>Describe the location and time of day</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-600 font-bold mt-0.5">•</span>
-                  <span>Mention the aesthetic or visual style you're going for</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-600 font-bold mt-0.5">•</span>
-                  <span>State your deliverables (images, videos, reels, etc.)</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-600 font-bold mt-0.5">•</span>
-                  <span>Upload reference images or mood boards to help guide the AI</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {isGenerating && (
-          <div className="mt-8 bg-white border-2 border-cyan-300 rounded-2xl p-8 shadow-xl">
-            <div className="flex items-start gap-4">
-              <Loader2 className="w-6 h-6 text-cyan-600 animate-spin mt-1 flex-shrink-0" />
-              <div>
-                <h4 className="font-bold text-slate-900 mb-3 text-lg">AI is working on your project...</h4>
-                <p className="text-slate-700 mb-4">
-                  We're analyzing your prompt{attachments.length > 0 && ' and reference materials'} to generate a complete production plan:
-                </p>
-                <div className="grid md:grid-cols-2 gap-x-6 gap-y-2 text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Mood board with curated references</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Pre-production timeline</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Complete call sheet</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Detailed shot list</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Equipment recommendations</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Budget estimate</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Post-production workflow</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cyan-600">✓</span>
-                    <span>Deliverables breakdown</span>
-                  </div>
+            <div className="grid md:grid-cols-2 gap-x-8 gap-y-3">
+              {[
+                'Include the type of campaign (lookbook, commercial, editorial)',
+                'Specify number of models or talent needed',
+                'Describe the location and time of day',
+                'Mention the aesthetic or visual style',
+                'State your deliverables (images, videos, reels)',
+                'Upload reference images or mood boards',
+              ].map((tip, i) => (
+                <div key={i} className="flex items-start gap-3 text-sm text-zinc-500">
+                  <span className="text-cyan-600 mt-0.5 flex-shrink-0">→</span>
+                  {tip}
                 </div>
-              </div>
+              ))}
             </div>
-          </div>
+          </motion.div>
         )}
       </main>
     </div>

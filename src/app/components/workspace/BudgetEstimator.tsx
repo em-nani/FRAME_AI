@@ -1,4 +1,5 @@
-import { Project } from '../../lib/types';
+import { useState } from 'react';
+import { Project, Budget, BudgetLineItem } from '../../lib/types';
 import { Card } from '../ui/card';
 import {
   Table,
@@ -7,23 +8,38 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from '../ui/table';
 import { DollarSign } from 'lucide-react';
+import EditableField from './EditableField';
 
 interface BudgetEstimatorProps {
   project: Project;
+  onUpdate: (updates: Partial<Project>) => void;
 }
 
-export default function BudgetEstimator({ project }: BudgetEstimatorProps) {
-  const { budget } = project;
+export default function BudgetEstimator({ project, onUpdate }: BudgetEstimatorProps) {
+  const [data, setData] = useState<Budget>(() => project.budget);
+
+  const update = (newData: Budget) => {
+    setData(newData);
+    onUpdate({ budget: newData });
+  };
+
+  const updateLineItem = (index: number, changes: Partial<BudgetLineItem>) => {
+    const lineItems = [...data.lineItems];
+    lineItems[index] = { ...lineItems[index], ...changes };
+    const totalEstimate = lineItems.reduce((sum, item) => sum + (item.estimatedCost || 0), 0);
+    update({ ...data, lineItems, totalEstimate });
+  };
 
   // Group budget items by category
-  const categories = Array.from(new Set(budget.lineItems.map(item => item.category)));
+  const categories = Array.from(new Set(data.lineItems.map(item => item.category)));
   const groupedBudget = categories.map(category => ({
     category,
-    items: budget.lineItems.filter(item => item.category === category),
-    total: budget.lineItems
+    items: data.lineItems
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.category === category),
+    total: data.lineItems
       .filter(item => item.category === category)
       .reduce((sum, item) => sum + item.estimatedCost, 0),
   }));
@@ -41,7 +57,7 @@ export default function BudgetEstimator({ project }: BudgetEstimatorProps) {
           <div>
             <p className="text-base text-purple-100 mb-3 font-medium">Total Estimated Budget</p>
             <p className="text-6xl font-bold text-white">
-              ${budget.totalEstimate.toLocaleString()}
+              ${data.totalEstimate.toLocaleString()}
             </p>
           </div>
           <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-xl">
@@ -82,16 +98,35 @@ export default function BudgetEstimator({ project }: BudgetEstimatorProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {items.map(({ item, index }) => (
                 <TableRow key={item.id} className="border-purple-100/50 hover:bg-purple-50/50">
-                  <TableCell className="font-medium text-slate-900">
-                    {item.item}
+                  <TableCell>
+                    <EditableField
+                      value={item.item}
+                      onChange={v => updateLineItem(index, { item: v })}
+                      className="font-medium text-slate-900"
+                    />
                   </TableCell>
-                  <TableCell className="text-slate-600">
-                    {item.notes}
+                  <TableCell>
+                    <EditableField
+                      value={item.notes}
+                      onChange={v => updateLineItem(index, { notes: v })}
+                      className="text-slate-600"
+                      placeholder="Add notes..."
+                    />
                   </TableCell>
-                  <TableCell className="text-right font-bold text-slate-900">
-                    ${item.estimatedCost.toLocaleString()}
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <span className="text-slate-500 font-medium">$</span>
+                      <input
+                        type="number"
+                        value={item.estimatedCost}
+                        min={0}
+                        step={100}
+                        onChange={e => updateLineItem(index, { estimatedCost: parseFloat(e.target.value) || 0 })}
+                        className="font-bold text-slate-900 bg-transparent outline-none border-b-2 border-transparent hover:border-purple-300 focus:border-purple-500 text-right w-28"
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

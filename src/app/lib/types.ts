@@ -4,6 +4,7 @@ export interface Project {
   prompt: string;
   attachments?: Attachment[];
   createdAt: string;
+  lastSaved?: string;
   status: 'planning' | 'in-progress' | 'completed' | 'archived';
   moodBoard: MoodBoard;
   preProduction: PreProduction;
