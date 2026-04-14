@@ -32,10 +32,10 @@ export default function EditableField({
     setEditing(false);
     const trimmed = typeof draft === 'string' ? draft.trim() : draft;
     if (trimmed !== value && trimmed !== '') onChange(trimmed);
-    else if (trimmed === '' && value !== '') onChange(value); // revert empty
+    else if (trimmed === '' && value !== '') onChange(value);
   };
 
-  const inputClass = `${className} bg-transparent outline-none border-b-2 border-purple-400 focus:border-purple-600 w-full px-0`;
+  const inputClass = `${className} bg-transparent outline-none border-b border-cyan-500/60 focus:border-cyan-400 w-full px-0`;
 
   if (editing) {
     if (multiline) {
@@ -77,7 +77,7 @@ export default function EditableField({
       className={`${className} cursor-text group/edit relative`}
       title="Click to edit"
     >
-      {value || <span className="opacity-40 italic text-sm">{placeholder}</span>}
+      {value || <span className="opacity-30 italic text-sm">{placeholder}</span>}
       <span className="absolute -bottom-0.5 left-0 right-0 h-px bg-current opacity-0 group-hover/edit:opacity-20 transition-opacity" />
     </span>
   );
