@@ -1,19 +1,12 @@
-import { useParams, Link, useNavigate } from 'react-router';
+import { useParams, Link } from 'react-router';
 import { useProjects } from '../lib/project-context';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
-import { 
-  ArrowLeft, 
-  Download, 
-  Users, 
-  Palette,
-  ClipboardList,
-  Camera,
-  Package,
-  DollarSign,
-  Film,
-  CheckSquare
+import {
+  ArrowLeft, Download, Users, Palette,
+  ClipboardList, Camera, Package, DollarSign, Film, CheckSquare,
+  Save, Loader2, Clock
 } from 'lucide-react';
 import MoodBoard from '../components/workspace/MoodBoard';
 import PreProductionTimeline from '../components/workspace/PreProductionTimeline';
@@ -23,185 +16,183 @@ import EquipmentList from '../components/workspace/EquipmentList';
 import BudgetEstimator from '../components/workspace/BudgetEstimator';
 import PostProductionTimeline from '../components/workspace/PostProductionTimeline';
 import Deliverables from '../components/workspace/Deliverables';
+import { useCallback, useRef, useState } from 'react';
+import { Project } from '../lib/types';
+import EditableField from '../components/workspace/EditableField';
+
+type SaveState = 'idle' | 'pending' | 'saved';
+
+function formatLastSaved(date: Date): string {
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  if (isToday) return `today at ${time}`;
+  const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${label} at ${time}`;
+}
 
 export default function Workspace() {
   const { projectId } = useParams();
-  const { currentProject, setCurrentProject } = useProjects();
-  const navigate = useNavigate();
+  const { currentProject, setCurrentProject, updateProject } = useProjects();
 
-  // Set current project if coming from direct link
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const pendingRef = useRef<Partial<Project>>({});
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   if (projectId && (!currentProject || currentProject.id !== projectId)) {
     setCurrentProject(projectId);
   }
 
+  const handleUpdate = useCallback((updates: Partial<Project>) => {
+    pendingRef.current = { ...pendingRef.current, ...updates };
+    setSaveState('pending');
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (!currentProject) return;
+      const now = new Date();
+      updateProject(currentProject.id, {
+        ...pendingRef.current,
+        lastSaved: now.toISOString(),
+      });
+      pendingRef.current = {};
+      setLastSaved(now);
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 3000);
+    }, 1500);
+  }, [currentProject, updateProject]);
+
   if (!currentProject) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-white mb-2">Project not found</h2>
-          <p className="text-zinc-400 mb-6">The project you're looking for doesn't exist.</p>
+          <h2 className="text-2xl tracking-tight text-white mb-2">Project not found</h2>
+          <p className="text-zinc-500 mb-6">The project you're looking for doesn't exist.</p>
           <Link to="/dashboard">
-            <Button>Go to Dashboard</Button>
+            <Button className="bg-cyan-500 hover:bg-cyan-400 text-white rounded-full">Go to Dashboard</Button>
           </Link>
         </div>
       </div>
     );
   }
 
-  const handleExportPDF = () => {
-    alert('PDF export feature coming soon!');
-  };
+  const handleExportPDF = () => alert('PDF export coming soon!');
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'planning':
-        return 'bg-blue-100 text-blue-700 border-blue-300';
-      case 'in-progress':
-        return 'bg-amber-100 text-amber-700 border-amber-300';
-      case 'completed':
-        return 'bg-emerald-100 text-emerald-700 border-emerald-300';
-      case 'archived':
-        return 'bg-slate-100 text-slate-700 border-slate-300';
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-300';
+      case 'planning': return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+      case 'in-progress': return 'bg-cyan-900/40 text-cyan-300 border-cyan-800';
+      case 'completed': return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+      default: return 'bg-zinc-800 text-zinc-400 border-zinc-700';
     }
   };
 
+  const tabs = [
+    { value: 'mood-board', icon: Palette, label: 'Mood Board' },
+    { value: 'pre-production', icon: ClipboardList, label: 'Pre-Prod' },
+    { value: 'call-sheet', icon: Users, label: 'Call Sheet' },
+    { value: 'shot-list', icon: Camera, label: 'Shot List' },
+    { value: 'equipment', icon: Package, label: 'Equipment' },
+    { value: 'budget', icon: DollarSign, label: 'Budget' },
+    { value: 'post-production', icon: Film, label: 'Post-Prod' },
+    { value: 'deliverables', icon: CheckSquare, label: 'Deliverables' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="border-b border-purple-200/50 bg-white/90 backdrop-blur-md sticky top-0 z-10 shadow-md">
+      <header className="border-b border-zinc-800 bg-black/90 backdrop-blur-md sticky top-0 z-10">
         <div className="mx-auto max-w-7xl px-6 py-5">
           <div className="flex items-center justify-between mb-5">
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
-                <span className="font-bold text-white text-lg">F</span>
-              </div>
-              <span className="font-bold text-2xl bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">FRAME</span>
+              <span className="text-2xl tracking-tighter text-white">FRAME</span>
             </Link>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="gap-2 border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-medium">
-                <Users className="w-4 h-4" />
-                Invite Team
+            <div className="flex items-center gap-4">
+              {/* Autosave indicator */}
+              <div className="flex items-center gap-2 text-xs min-w-[140px] justify-end">
+                {saveState === 'pending' && (
+                  <span className="flex items-center gap-1.5 text-amber-400">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Saving...
+                  </span>
+                )}
+                {saveState === 'saved' && lastSaved && (
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <Save className="w-3 h-3" />
+                    Saved {formatLastSaved(lastSaved)}
+                  </span>
+                )}
+                {saveState === 'idle' && lastSaved && (
+                  <span className="flex items-center gap-1.5 text-zinc-600">
+                    <Clock className="w-3 h-3" />
+                    Saved {formatLastSaved(lastSaved)}
+                  </span>
+                )}
+              </div>
+              <Button variant="outline" size="sm" className="gap-2 border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white bg-transparent text-sm rounded-full">
+                <Users className="w-4 h-4" />Invite Team
               </Button>
-              <Button variant="outline" size="sm" className="gap-2 border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-medium" onClick={handleExportPDF}>
-                <Download className="w-4 h-4" />
-                Export PDF
+              <Button variant="outline" size="sm" className="gap-2 border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white bg-transparent text-sm rounded-full" onClick={handleExportPDF}>
+                <Download className="w-4 h-4" />Export PDF
               </Button>
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="gap-2 text-slate-700 hover:text-purple-600 font-medium">
-                  <ArrowLeft className="w-4 h-4" />
-                  Dashboard
+                <Button variant="ghost" size="sm" className="gap-2 text-zinc-500 hover:text-white hover:bg-zinc-800 text-sm rounded-full">
+                  <ArrowLeft className="w-4 h-4" />Dashboard
                 </Button>
               </Link>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">{currentProject.name}</h1>
-              <p className="text-slate-600 leading-relaxed">{currentProject.prompt}</p>
+          <div className="flex items-start justify-between">
+            <div className="flex-1 pr-8">
+              <h1 className="text-3xl tracking-tight text-white mb-2">
+                <EditableField
+                  value={currentProject.name}
+                  onChange={v => handleUpdate({ name: v })}
+                  className="text-3xl tracking-tight text-white"
+                />
+              </h1>
+              <p className="text-zinc-500 text-sm leading-relaxed max-w-2xl">
+                <EditableField
+                  value={currentProject.prompt}
+                  onChange={v => handleUpdate({ prompt: v })}
+                  className="text-zinc-500 text-sm leading-relaxed"
+                  multiline
+                />
+              </p>
             </div>
-            <Badge className={getStatusColor(currentProject.status)} style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+            <Badge className={`${getStatusColor(currentProject.status)} border text-xs px-3 py-1.5 rounded-full`}>
               {currentProject.status}
             </Badge>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="mx-auto max-w-7xl px-6 py-10">
         <Tabs defaultValue="mood-board" className="w-full">
-          <TabsList className="grid grid-cols-8 w-full bg-white border-2 border-purple-200/50 mb-10 p-1 shadow-md h-auto">
-            <TabsTrigger 
-              value="mood-board" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <Palette className="w-4 h-4" />
-              <span className="hidden sm:inline">Mood Board</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pre-production" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <ClipboardList className="w-4 h-4" />
-              <span className="hidden sm:inline">Pre-Prod</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="call-sheet" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Call Sheet</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="shot-list" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <Camera className="w-4 h-4" />
-              <span className="hidden sm:inline">Shot List</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="equipment" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <Package className="w-4 h-4" />
-              <span className="hidden sm:inline">Equipment</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="budget" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <DollarSign className="w-4 h-4" />
-              <span className="hidden sm:inline">Budget</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="post-production" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <Film className="w-4 h-4" />
-              <span className="hidden sm:inline">Post-Prod</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="deliverables" 
-              className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-violet-600 data-[state=active]:text-white py-3 text-sm font-medium data-[state=active]:shadow-lg"
-            >
-              <CheckSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">Deliverables</span>
-            </TabsTrigger>
+          <TabsList className="flex w-full bg-zinc-900 border border-zinc-800 mb-10 p-1 h-auto gap-1 rounded-2xl overflow-x-auto">
+            {tabs.map(({ value, icon: Icon, label }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="flex-1 gap-2 data-[state=active]:bg-white data-[state=active]:text-black text-zinc-500 hover:text-zinc-300 py-3 text-xs font-medium rounded-xl transition-all data-[state=active]:shadow-none min-w-fit px-4"
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          <TabsContent value="mood-board">
-            <MoodBoard project={currentProject} />
-          </TabsContent>
-
-          <TabsContent value="pre-production">
-            <PreProductionTimeline project={currentProject} />
-          </TabsContent>
-
-          <TabsContent value="call-sheet">
-            <CallSheet project={currentProject} />
-          </TabsContent>
-
-          <TabsContent value="shot-list">
-            <ShotList project={currentProject} />
-          </TabsContent>
-
-          <TabsContent value="equipment">
-            <EquipmentList project={currentProject} />
-          </TabsContent>
-
-          <TabsContent value="budget">
-            <BudgetEstimator project={currentProject} />
-          </TabsContent>
-
-          <TabsContent value="post-production">
-            <PostProductionTimeline project={currentProject} />
-          </TabsContent>
-
-          <TabsContent value="deliverables">
-            <Deliverables project={currentProject} />
-          </TabsContent>
+          <TabsContent value="mood-board"><MoodBoard project={currentProject} onUpdate={handleUpdate} /></TabsContent>
+          <TabsContent value="pre-production"><PreProductionTimeline project={currentProject} onUpdate={handleUpdate} /></TabsContent>
+          <TabsContent value="call-sheet"><CallSheet project={currentProject} onUpdate={handleUpdate} /></TabsContent>
+          <TabsContent value="shot-list"><ShotList project={currentProject} onUpdate={handleUpdate} /></TabsContent>
+          <TabsContent value="equipment"><EquipmentList project={currentProject} onUpdate={handleUpdate} /></TabsContent>
+          <TabsContent value="budget"><BudgetEstimator project={currentProject} onUpdate={handleUpdate} /></TabsContent>
+          <TabsContent value="post-production"><PostProductionTimeline project={currentProject} onUpdate={handleUpdate} /></TabsContent>
+          <TabsContent value="deliverables"><Deliverables project={currentProject} onUpdate={handleUpdate} /></TabsContent>
         </Tabs>
       </main>
     </div>

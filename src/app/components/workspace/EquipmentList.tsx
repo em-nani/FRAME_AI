@@ -1,21 +1,37 @@
-import { Project } from '../../lib/types';
+import { useState } from 'react';
+import { Project, EquipmentItem } from '../../lib/types';
 import { Card } from '../ui/card';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { Package } from 'lucide-react';
+import EditableField from './EditableField';
 
 interface EquipmentListProps {
   project: Project;
+  onUpdate: (updates: Partial<Project>) => void;
 }
 
-export default function EquipmentList({ project }: EquipmentListProps) {
-  const { equipment } = project;
+export default function EquipmentList({ project, onUpdate }: EquipmentListProps) {
+  const [equipment, setEquipment] = useState<EquipmentItem[]>(() => project.equipment);
+
+  const update = (newEquipment: EquipmentItem[]) => {
+    setEquipment(newEquipment);
+    onUpdate({ equipment: newEquipment });
+  };
+
+  const updateItem = (index: number, changes: Partial<EquipmentItem>) => {
+    const e = [...equipment];
+    e[index] = { ...e[index], ...changes };
+    update(e);
+  };
 
   // Group equipment by category
   const categories = Array.from(new Set(equipment.map(e => e.category)));
   const groupedEquipment = categories.map(category => ({
     category,
-    items: equipment.filter(e => e.category === category),
+    items: equipment
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.category === category),
   }));
 
   const packedCount = equipment.filter(e => e.packed).length;
@@ -38,7 +54,7 @@ export default function EquipmentList({ project }: EquipmentListProps) {
         <div className="w-full bg-purple-100 rounded-full h-4 shadow-inner">
           <div
             className="bg-gradient-to-r from-purple-600 to-violet-600 h-4 rounded-full transition-all duration-500 shadow-lg"
-            style={{ width: `${(packedCount / equipment.length) * 100}%` }}
+            style={{ width: `${equipment.length > 0 ? (packedCount / equipment.length) * 100 : 0}%` }}
           />
         </div>
       </Card>
@@ -53,7 +69,7 @@ export default function EquipmentList({ project }: EquipmentListProps) {
             {category}
           </h3>
           <div className="space-y-4">
-            {items.map((item) => (
+            {items.map(({ item, index }) => (
               <div
                 key={item.id}
                 className="flex items-start gap-5 p-5 bg-gradient-to-r from-purple-50 to-violet-50 rounded-2xl border-2 border-purple-200/50 shadow-sm hover:shadow-md transition-shadow"
@@ -61,20 +77,35 @@ export default function EquipmentList({ project }: EquipmentListProps) {
                 <div className="mt-1">
                   <Checkbox
                     checked={item.packed}
-                    className="border-2 border-purple-400 w-5 h-5"
+                    onCheckedChange={checked => updateItem(index, { packed: !!checked })}
+                    className="border-2 border-purple-400 w-5 h-5 cursor-pointer"
                   />
                 </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-bold text-slate-900 text-lg">{item.item}</h4>
-                    <Badge variant="outline" className="border-2 border-indigo-300 text-indigo-700 bg-indigo-50 px-3 py-1.5">
-                      Qty: {item.quantity}
-                    </Badge>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-2 gap-4">
+                    <EditableField
+                      value={item.item}
+                      onChange={v => updateItem(index, { item: v })}
+                      className="font-bold text-slate-900 text-lg"
+                    />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm text-indigo-600 font-medium">Qty:</span>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        min={1}
+                        onChange={e => updateItem(index, { quantity: parseInt(e.target.value) || 1 })}
+                        className="w-16 text-center font-bold text-indigo-700 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-2 py-1 outline-none focus:border-indigo-400"
+                      />
+                    </div>
                   </div>
-                  {item.notes && (
-                    <p className="text-slate-600">{item.notes}</p>
-                  )}
+                  <EditableField
+                    value={item.notes}
+                    onChange={v => updateItem(index, { notes: v })}
+                    className="text-slate-600"
+                    placeholder="Add notes..."
+                  />
                 </div>
               </div>
             ))}

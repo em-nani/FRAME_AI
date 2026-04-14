@@ -1,20 +1,28 @@
-import { Project } from '../../lib/types';
+import { useState } from 'react';
+import { Project, CallSheet as CallSheetType } from '../../lib/types';
 import { Card } from '../ui/card';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  User, 
-  Phone, 
-  AlertCircle 
+import EditableField from './EditableField';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  AlertCircle
 } from 'lucide-react';
 
 interface CallSheetProps {
   project: Project;
+  onUpdate: (updates: Partial<Project>) => void;
 }
 
-export default function CallSheet({ project }: CallSheetProps) {
-  const { callSheet } = project;
+export default function CallSheet({ project, onUpdate }: CallSheetProps) {
+  const [data, setData] = useState<CallSheetType>(() => project.callSheet);
+  const [editingDate, setEditingDate] = useState(false);
+
+  const update = (newData: CallSheetType) => {
+    setData(newData);
+    onUpdate({ callSheet: newData });
+  };
 
   return (
     <div className="space-y-8">
@@ -28,31 +36,54 @@ export default function CallSheet({ project }: CallSheetProps) {
         <h3 className="font-bold text-slate-900 mb-6 text-xl">Shoot Details</h3>
         <div className="grid md:grid-cols-3 gap-8">
           <div className="flex items-start gap-4">
-            <Calendar className="w-6 h-6 text-purple-600 mt-0.5" />
-            <div>
+            <Calendar className="w-6 h-6 text-purple-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
               <p className="text-sm text-slate-500 mb-2 font-medium">Shoot Date</p>
-              <p className="font-bold text-slate-900 text-lg">
-                {new Date(callSheet.shootDate).toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </p>
+              {editingDate ? (
+                <input
+                  type="date"
+                  value={data.shootDate}
+                  onChange={e => update({ ...data, shootDate: e.target.value })}
+                  onBlur={() => setEditingDate(false)}
+                  className="font-bold text-slate-900 text-lg bg-transparent outline-none border-b-2 border-purple-400 w-full"
+                  autoFocus
+                />
+              ) : (
+                <p
+                  className="font-bold text-slate-900 text-lg cursor-text hover:opacity-75 transition-opacity"
+                  onClick={() => setEditingDate(true)}
+                  title="Click to edit"
+                >
+                  {new Date(data.shootDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-start gap-4">
-            <Clock className="w-6 h-6 text-purple-600 mt-0.5" />
-            <div>
+            <Clock className="w-6 h-6 text-purple-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
               <p className="text-sm text-slate-500 mb-2 font-medium">Call Time</p>
-              <p className="font-bold text-slate-900 text-lg">{callSheet.callTime}</p>
+              <EditableField
+                value={data.callTime}
+                onChange={v => update({ ...data, callTime: v })}
+                className="font-bold text-slate-900 text-lg"
+              />
             </div>
           </div>
           <div className="flex items-start gap-4">
-            <Clock className="w-6 h-6 text-purple-600 mt-0.5" />
-            <div>
+            <Clock className="w-6 h-6 text-purple-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
               <p className="text-sm text-slate-500 mb-2 font-medium">Wrap Time</p>
-              <p className="font-bold text-slate-900 text-lg">{callSheet.wrapTime}</p>
+              <EditableField
+                value={data.wrapTime}
+                onChange={v => update({ ...data, wrapTime: v })}
+                className="font-bold text-slate-900 text-lg"
+              />
             </div>
           </div>
         </div>
@@ -67,22 +98,38 @@ export default function CallSheet({ project }: CallSheetProps) {
         <div className="space-y-4">
           <div>
             <p className="text-sm text-slate-500 mb-2 font-medium">Name</p>
-            <p className="text-slate-900 text-lg">{callSheet.location.name}</p>
+            <EditableField
+              value={data.location.name}
+              onChange={v => update({ ...data, location: { ...data.location, name: v } })}
+              className="text-slate-900 text-lg"
+            />
           </div>
           <div>
             <p className="text-sm text-slate-500 mb-2 font-medium">Address</p>
-            <p className="text-slate-900 text-lg">{callSheet.location.address}</p>
+            <EditableField
+              value={data.location.address}
+              onChange={v => update({ ...data, location: { ...data.location, address: v } })}
+              className="text-slate-900 text-lg"
+            />
           </div>
           <div>
             <p className="text-sm text-slate-500 mb-2 font-medium">Parking</p>
-            <p className="text-slate-900">{callSheet.location.parking}</p>
+            <EditableField
+              value={data.location.parking}
+              onChange={v => update({ ...data, location: { ...data.location, parking: v } })}
+              className="text-slate-900"
+            />
           </div>
-          {callSheet.location.notes && (
-            <div>
-              <p className="text-sm text-slate-500 mb-2 font-medium">Notes</p>
-              <p className="text-slate-900">{callSheet.location.notes}</p>
-            </div>
-          )}
+          <div>
+            <p className="text-sm text-slate-500 mb-2 font-medium">Notes</p>
+            <EditableField
+              value={data.location.notes}
+              onChange={v => update({ ...data, location: { ...data.location, notes: v } })}
+              className="text-slate-900"
+              multiline
+              placeholder="Add location notes..."
+            />
+          </div>
         </div>
       </Card>
 
@@ -90,20 +137,45 @@ export default function CallSheet({ project }: CallSheetProps) {
       <Card className="bg-white border-2 border-purple-200/50 p-8 shadow-lg">
         <h3 className="font-bold text-slate-900 mb-6 text-xl">Talent</h3>
         <div className="space-y-4">
-          {callSheet.talent.map((talent) => (
+          {data.talent.map((talent, i) => (
             <div key={talent.id} className="flex items-center justify-between p-5 bg-gradient-to-r from-purple-50 to-violet-50 rounded-2xl border-2 border-purple-200/50 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
                   <User className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <p className="font-bold text-slate-900 text-lg">{talent.role}</p>
-                  <p className="text-slate-600">{talent.name}</p>
+                <div className="flex-1 min-w-0">
+                  <EditableField
+                    value={talent.role}
+                    onChange={v => {
+                      const t = [...data.talent];
+                      t[i] = { ...t[i], role: v };
+                      update({ ...data, talent: t });
+                    }}
+                    className="font-bold text-slate-900 text-lg block"
+                  />
+                  <EditableField
+                    value={talent.name}
+                    onChange={v => {
+                      const t = [...data.talent];
+                      t[i] = { ...t[i], name: v };
+                      update({ ...data, talent: t });
+                    }}
+                    className="text-slate-600 block"
+                    placeholder="Name TBD"
+                  />
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right ml-4">
                 <p className="text-sm text-slate-500 font-medium">Call Time</p>
-                <p className="font-bold text-purple-700 text-lg">{talent.callTime}</p>
+                <EditableField
+                  value={talent.callTime}
+                  onChange={v => {
+                    const t = [...data.talent];
+                    t[i] = { ...t[i], callTime: v };
+                    update({ ...data, talent: t });
+                  }}
+                  className="font-bold text-purple-700 text-lg"
+                />
               </div>
             </div>
           ))}
@@ -114,20 +186,59 @@ export default function CallSheet({ project }: CallSheetProps) {
       <Card className="bg-white border-2 border-purple-200/50 p-8 shadow-lg">
         <h3 className="font-bold text-slate-900 mb-6 text-xl">Crew</h3>
         <div className="space-y-4">
-          {callSheet.crew.map((crew) => (
+          {data.crew.map((crew, i) => (
             <div key={crew.id} className="flex items-center justify-between p-5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border-2 border-indigo-200/50 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
                   <User className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <p className="font-bold text-slate-900 text-lg">{crew.role}</p>
-                  <p className="text-slate-600">{crew.name || 'TBD'}</p>
+                <div className="flex-1 min-w-0">
+                  <EditableField
+                    value={crew.role}
+                    onChange={v => {
+                      const c = [...data.crew];
+                      c[i] = { ...c[i], role: v };
+                      update({ ...data, crew: c });
+                    }}
+                    className="font-bold text-slate-900 text-lg block"
+                  />
+                  <EditableField
+                    value={crew.name}
+                    onChange={v => {
+                      const c = [...data.crew];
+                      c[i] = { ...c[i], name: v };
+                      update({ ...data, crew: c });
+                    }}
+                    className="text-slate-600 block"
+                    placeholder="Name TBD"
+                  />
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Call Time</p>
-                <p className="font-bold text-indigo-700 text-lg">{crew.callTime}</p>
+              <div className="text-right ml-4 space-y-1">
+                <div>
+                  <p className="text-sm text-slate-500 font-medium">Call Time</p>
+                  <EditableField
+                    value={crew.callTime}
+                    onChange={v => {
+                      const c = [...data.crew];
+                      c[i] = { ...c[i], callTime: v };
+                      update({ ...data, crew: c });
+                    }}
+                    className="font-bold text-indigo-700 text-lg"
+                  />
+                </div>
+                <div>
+                  <EditableField
+                    value={crew.contact}
+                    onChange={v => {
+                      const c = [...data.crew];
+                      c[i] = { ...c[i], contact: v };
+                      update({ ...data, crew: c });
+                    }}
+                    className="text-sm text-slate-500"
+                    placeholder="Add contact..."
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -138,16 +249,40 @@ export default function CallSheet({ project }: CallSheetProps) {
       <Card className="bg-white border-2 border-purple-200/50 p-8 shadow-lg">
         <h3 className="font-bold text-slate-900 mb-6 text-xl">Schedule</h3>
         <div className="space-y-3">
-          {callSheet.schedule.map((item) => (
+          {data.schedule.map((item, i) => (
             <div key={item.id} className="flex items-center gap-5 p-4 bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl border-2 border-violet-200/50 shadow-sm">
-              <div className="w-24">
-                <p className="font-bold text-purple-700 text-lg">{item.time}</p>
+              <div className="w-24 shrink-0">
+                <EditableField
+                  value={item.time}
+                  onChange={v => {
+                    const s = [...data.schedule];
+                    s[i] = { ...s[i], time: v };
+                    update({ ...data, schedule: s });
+                  }}
+                  className="font-bold text-purple-700 text-lg"
+                />
               </div>
               <div className="flex-1">
-                <p className="text-slate-900 font-medium">{item.activity}</p>
+                <EditableField
+                  value={item.activity}
+                  onChange={v => {
+                    const s = [...data.schedule];
+                    s[i] = { ...s[i], activity: v };
+                    update({ ...data, schedule: s });
+                  }}
+                  className="text-slate-900 font-medium"
+                />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-600">{item.location}</p>
+                <EditableField
+                  value={item.location}
+                  onChange={v => {
+                    const s = [...data.schedule];
+                    s[i] = { ...s[i], location: v };
+                    update({ ...data, schedule: s });
+                  }}
+                  className="text-sm text-slate-600"
+                />
               </div>
             </div>
           ))}
@@ -163,15 +298,27 @@ export default function CallSheet({ project }: CallSheetProps) {
         <div className="grid md:grid-cols-3 gap-6">
           <div>
             <p className="text-sm text-red-600 mb-2 font-semibold">Nearest Hospital</p>
-            <p className="text-slate-900">{callSheet.emergency.hospital}</p>
+            <EditableField
+              value={data.emergency.hospital}
+              onChange={v => update({ ...data, emergency: { ...data.emergency, hospital: v } })}
+              className="text-slate-900"
+            />
           </div>
           <div>
             <p className="text-sm text-red-600 mb-2 font-semibold">Police</p>
-            <p className="text-slate-900">{callSheet.emergency.police}</p>
+            <EditableField
+              value={data.emergency.police}
+              onChange={v => update({ ...data, emergency: { ...data.emergency, police: v } })}
+              className="text-slate-900"
+            />
           </div>
           <div>
             <p className="text-sm text-red-600 mb-2 font-semibold">Production Contact</p>
-            <p className="text-slate-900">{callSheet.emergency.contact}</p>
+            <EditableField
+              value={data.emergency.contact}
+              onChange={v => update({ ...data, emergency: { ...data.emergency, contact: v } })}
+              className="text-slate-900"
+            />
           </div>
         </div>
       </Card>

@@ -1,4 +1,5 @@
-import { Project } from '../../lib/types';
+import { useState } from 'react';
+import { Project, Deliverable } from '../../lib/types';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import {
@@ -10,30 +11,48 @@ import {
   TableRow,
 } from '../ui/table';
 import { Image, Video, CheckCircle2 } from 'lucide-react';
+import EditableField from './EditableField';
 
 interface DeliverablesProps {
   project: Project;
+  onUpdate: (updates: Partial<Project>) => void;
 }
 
-export default function Deliverables({ project }: DeliverablesProps) {
-  const { deliverables } = project;
+const STATUS_CYCLE: Deliverable['status'][] = ['pending', 'in-progress', 'delivered'];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'delivered':
-        return 'bg-emerald-100 text-emerald-700 border-emerald-300';
-      case 'in-progress':
-        return 'bg-amber-100 text-amber-700 border-amber-300';
-      default:
-        return 'bg-slate-100 text-slate-600 border-slate-300';
-    }
+function getStatusColor(status: string) {
+  switch (status) {
+    case 'delivered': return 'bg-emerald-100 text-emerald-700 border-emerald-300 cursor-pointer';
+    case 'in-progress': return 'bg-amber-100 text-amber-700 border-amber-300 cursor-pointer';
+    default: return 'bg-slate-100 text-slate-600 border-slate-300 cursor-pointer';
+  }
+}
+
+function getIcon(type: string) {
+  if (type.toLowerCase().includes('reel') || type.toLowerCase().includes('video')) {
+    return <Video className="w-5 h-5 text-purple-600" />;
+  }
+  return <Image className="w-5 h-5 text-purple-600" />;
+}
+
+export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
+  const [deliverables, setDeliverables] = useState<Deliverable[]>(() => project.deliverables);
+
+  const update = (newDeliverables: Deliverable[]) => {
+    setDeliverables(newDeliverables);
+    onUpdate({ deliverables: newDeliverables });
   };
 
-  const getIcon = (type: string) => {
-    if (type.toLowerCase().includes('reel') || type.toLowerCase().includes('video')) {
-      return <Video className="w-5 h-5 text-purple-600" />;
-    }
-    return <Image className="w-5 h-5 text-purple-600" />;
+  const updateItem = (index: number, changes: Partial<Deliverable>) => {
+    const d = [...deliverables];
+    d[index] = { ...d[index], ...changes };
+    update(d);
+  };
+
+  const cycleStatus = (index: number) => {
+    const current = deliverables[index].status;
+    const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(current) + 1) % STATUS_CYCLE.length];
+    updateItem(index, { status: next });
   };
 
   const pendingCount = deliverables.filter(d => d.status === 'pending').length;
@@ -82,25 +101,47 @@ export default function Deliverables({ project }: DeliverablesProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {deliverables.map((deliverable) => (
+            {deliverables.map((deliverable, index) => (
               <TableRow key={deliverable.id} className="border-purple-100/50 hover:bg-purple-50/50">
                 <TableCell>
                   {getIcon(deliverable.type)}
                 </TableCell>
-                <TableCell className="font-bold text-slate-900">
-                  {deliverable.type}
-                </TableCell>
-                <TableCell className="text-slate-700 font-mono">
-                  {deliverable.dimensions}
-                </TableCell>
-                <TableCell className="text-slate-700">
-                  {deliverable.platform}
-                </TableCell>
-                <TableCell className="text-slate-900 font-medium">
-                  {deliverable.quantity}
+                <TableCell>
+                  <EditableField
+                    value={deliverable.type}
+                    onChange={v => updateItem(index, { type: v })}
+                    className="font-bold text-slate-900"
+                  />
                 </TableCell>
                 <TableCell>
-                  <Badge className={getStatusColor(deliverable.status)}>
+                  <EditableField
+                    value={deliverable.dimensions}
+                    onChange={v => updateItem(index, { dimensions: v })}
+                    className="text-slate-700 font-mono"
+                  />
+                </TableCell>
+                <TableCell>
+                  <EditableField
+                    value={deliverable.platform}
+                    onChange={v => updateItem(index, { platform: v })}
+                    className="text-slate-700"
+                  />
+                </TableCell>
+                <TableCell>
+                  <input
+                    type="number"
+                    value={deliverable.quantity}
+                    min={1}
+                    onChange={e => updateItem(index, { quantity: parseInt(e.target.value) || 1 })}
+                    className="font-medium text-slate-900 bg-transparent outline-none border-b-2 border-transparent hover:border-purple-300 focus:border-purple-500 w-16 text-center"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    className={getStatusColor(deliverable.status)}
+                    onClick={() => cycleStatus(index)}
+                    title="Click to change status"
+                  >
                     {deliverable.status === 'in-progress' ? 'in progress' : deliverable.status}
                   </Badge>
                 </TableCell>
