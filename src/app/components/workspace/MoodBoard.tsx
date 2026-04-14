@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Project, MoodBoard as MoodBoardType } from '../../lib/types';
 import { Card } from '../ui/card';
-import { Badge } from '../ui/badge';
 import EditableField from './EditableField';
 import { X, Plus } from 'lucide-react';
 
@@ -34,33 +33,32 @@ export default function MoodBoard({ project, onUpdate }: MoodBoardProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent mb-3">Mood Board</h2>
-        <p className="text-slate-600 text-lg">Visual direction and aesthetic references for this campaign</p>
+        <h2 className="text-3xl font-bold text-white mb-2">Mood Board</h2>
+        <p className="text-zinc-500">Visual direction and aesthetic references for this campaign</p>
       </div>
 
       {/* Aesthetic & Keywords */}
-      <Card className="bg-white border-2 border-purple-200/50 p-8 shadow-lg">
-        <h3 className="font-bold text-slate-900 mb-6 text-xl">Aesthetic Direction</h3>
-        <div className="flex items-center gap-4 mb-6">
-          <span className="text-slate-700 font-medium shrink-0">Style:</span>
-          <Badge className="bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 border-purple-300 text-base px-4 py-2">
+      <Card className="bg-zinc-900 border border-zinc-800 p-6">
+        <h3 className="font-semibold text-white mb-5 text-base">Aesthetic Direction</h3>
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-zinc-500 text-sm shrink-0">Style:</span>
+          <span className="bg-zinc-800 border border-zinc-700 rounded-full px-3 py-1 text-sm text-zinc-300">
             <EditableField
               value={data.aesthetic}
               onChange={v => update({ ...data, aesthetic: v })}
-              className="text-purple-700 font-medium"
+              className="text-zinc-300 text-sm"
             />
-          </Badge>
+          </span>
         </div>
-        <div className="flex items-start gap-4 flex-wrap">
-          <span className="text-slate-700 font-medium shrink-0 mt-1">Keywords:</span>
-          <div className="flex flex-wrap gap-3">
+        <div className="flex items-start gap-3 flex-wrap">
+          <span className="text-zinc-500 text-sm shrink-0 mt-1">Keywords:</span>
+          <div className="flex flex-wrap gap-2">
             {data.keywords.map((keyword, index) => (
-              <Badge
+              <span
                 key={index}
-                variant="outline"
-                className="border-2 border-indigo-300 text-indigo-700 bg-indigo-50 px-3 py-1.5 gap-2 group"
+                className="group flex items-center gap-1.5 bg-zinc-800 border border-zinc-700 rounded-full px-3 py-1 text-sm text-zinc-300"
               >
                 <EditableField
                   value={keyword}
@@ -69,19 +67,18 @@ export default function MoodBoard({ project, onUpdate }: MoodBoardProps) {
                     kws[index] = v;
                     update({ ...data, keywords: kws });
                   }}
-                  className="text-indigo-700"
+                  className="text-zinc-300 text-sm"
                 />
                 <button
                   onClick={() => removeKeyword(index)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 hover:text-red-500"
-                  title="Remove keyword"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400 ml-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
-              </Badge>
+              </span>
             ))}
             {addingKeyword ? (
-              <Badge variant="outline" className="border-2 border-dashed border-indigo-300 bg-indigo-50 px-3 py-1.5">
+              <span className="flex items-center bg-zinc-800 border border-dashed border-cyan-500/50 rounded-full px-3 py-1">
                 <input
                   type="text"
                   value={newKeyword}
@@ -91,17 +88,17 @@ export default function MoodBoard({ project, onUpdate }: MoodBoardProps) {
                     if (e.key === 'Enter') addKeyword();
                     if (e.key === 'Escape') { setNewKeyword(''); setAddingKeyword(false); }
                   }}
-                  className="text-indigo-700 bg-transparent outline-none w-24 text-sm"
+                  className="text-zinc-300 text-sm bg-transparent outline-none w-24"
                   placeholder="Add..."
                   autoFocus
                 />
-              </Badge>
+              </span>
             ) : (
               <button
                 onClick={() => setAddingKeyword(true)}
-                className="flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-600 border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-full px-3 py-1 transition-colors"
+                className="flex items-center gap-1 text-sm text-zinc-500 hover:text-cyan-400 border border-dashed border-zinc-700 hover:border-cyan-500/50 rounded-full px-3 py-1 transition-colors"
               >
-                <Plus className="w-3 h-3" /> Add keyword
+                <Plus className="w-3 h-3" /> Add
               </button>
             )}
           </div>
@@ -109,32 +106,31 @@ export default function MoodBoard({ project, onUpdate }: MoodBoardProps) {
       </Card>
 
       {/* Color Palette */}
-      <Card className="bg-white border-2 border-purple-200/50 p-8 shadow-lg">
-        <h3 className="font-bold text-slate-900 mb-6 text-xl">Color Palette</h3>
+      <Card className="bg-zinc-900 border border-zinc-800 p-6">
+        <h3 className="font-semibold text-white mb-5 text-base">Color Palette</h3>
         <div className="flex gap-4">
           {data.colorPalette.map((color, index) => (
             <div key={index} className="flex-1">
-              <div className="relative group">
-                <div
-                  className="w-full h-32 rounded-2xl border-4 border-white shadow-xl mb-3 transition-transform group-hover:scale-105 cursor-pointer"
-                  style={{ backgroundColor: color }}
-                  onClick={() => {
-                    const input = document.getElementById(`color-input-${index}`) as HTMLInputElement;
-                    input?.click();
-                  }}
-                />
-                <input
-                  id={`color-input-${index}`}
-                  type="color"
-                  value={color}
-                  onChange={e => {
-                    const palette = [...data.colorPalette];
-                    palette[index] = e.target.value;
-                    update({ ...data, colorPalette: palette });
-                  }}
-                  className="sr-only"
-                />
-              </div>
+              <div
+                className="w-full h-28 rounded-xl border border-zinc-700 mb-3 transition-transform hover:scale-105 cursor-pointer shadow-lg"
+                style={{ backgroundColor: color }}
+                onClick={() => {
+                  const input = document.getElementById(`color-input-${index}`) as HTMLInputElement;
+                  input?.click();
+                }}
+                title="Click to pick color"
+              />
+              <input
+                id={`color-input-${index}`}
+                type="color"
+                value={color}
+                onChange={e => {
+                  const palette = [...data.colorPalette];
+                  palette[index] = e.target.value;
+                  update({ ...data, colorPalette: palette });
+                }}
+                className="sr-only"
+              />
               <EditableField
                 value={color}
                 onChange={v => {
@@ -142,25 +138,25 @@ export default function MoodBoard({ project, onUpdate }: MoodBoardProps) {
                   palette[index] = v;
                   update({ ...data, colorPalette: palette });
                 }}
-                className="text-sm text-slate-600 text-center font-mono font-semibold block w-full"
+                className="text-xs text-zinc-500 text-center font-mono block w-full"
                 placeholder="#000000"
               />
             </div>
           ))}
         </div>
-        <p className="text-xs text-slate-400 mt-4">Click a color swatch to open the color picker, or click the hex value to type one in.</p>
+        <p className="text-xs text-zinc-600 mt-4">Click a swatch to open the color picker, or click the hex value to type one in.</p>
       </Card>
 
       {/* Reference Images */}
-      <Card className="bg-white border-2 border-purple-200/50 p-8 shadow-lg">
-        <h3 className="font-bold text-slate-900 mb-6 text-xl">Reference Images</h3>
-        <div className="grid grid-cols-3 gap-6">
+      <Card className="bg-zinc-900 border border-zinc-800 p-6">
+        <h3 className="font-semibold text-white mb-5 text-base">Reference Images</h3>
+        <div className="grid grid-cols-3 gap-4">
           {data.images.map((image, index) => (
-            <div key={index} className="aspect-square rounded-2xl overflow-hidden border-4 border-white shadow-xl hover:shadow-2xl transition-all duration-300 group">
+            <div key={index} className="aspect-square rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-600 transition-colors group">
               <img
                 src={image}
                 alt={`Mood board reference ${index + 1}`}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
           ))}

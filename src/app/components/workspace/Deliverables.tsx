@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { Project, Deliverable } from '../../lib/types';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Image, Video, CheckCircle2 } from 'lucide-react';
 import EditableField from './EditableField';
 
@@ -22,17 +15,17 @@ const STATUS_CYCLE: Deliverable['status'][] = ['pending', 'in-progress', 'delive
 
 function getStatusColor(status: string) {
   switch (status) {
-    case 'delivered': return 'bg-emerald-100 text-emerald-700 border-emerald-300 cursor-pointer';
-    case 'in-progress': return 'bg-amber-100 text-amber-700 border-amber-300 cursor-pointer';
-    default: return 'bg-slate-100 text-slate-600 border-slate-300 cursor-pointer';
+    case 'delivered': return 'bg-emerald-900/40 text-emerald-400 border-emerald-800 cursor-pointer';
+    case 'in-progress': return 'bg-amber-900/40 text-amber-400 border-amber-800 cursor-pointer';
+    default: return 'bg-zinc-800 text-zinc-400 border-zinc-700 cursor-pointer';
   }
 }
 
 function getIcon(type: string) {
   if (type.toLowerCase().includes('reel') || type.toLowerCase().includes('video')) {
-    return <Video className="w-5 h-5 text-purple-600" />;
+    return <Video className="w-4 h-4 text-zinc-500" />;
   }
-  return <Image className="w-5 h-5 text-purple-600" />;
+  return <Image className="w-4 h-4 text-zinc-500" />;
 }
 
 export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
@@ -61,71 +54,57 @@ export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
   const totalAssets = deliverables.reduce((sum, d) => sum + d.quantity, 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent mb-3">Deliverables</h2>
-        <p className="text-slate-600 text-lg">All final assets to be delivered for this campaign</p>
+        <h2 className="text-3xl font-bold text-white mb-2">Deliverables</h2>
+        <p className="text-zinc-500">All final assets to be delivered for this campaign</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-6">
-        <Card className="bg-white border-2 border-purple-200/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <p className="text-sm text-slate-500 mb-2 font-medium">Total Assets</p>
-          <p className="text-4xl font-bold text-purple-700">{totalAssets}</p>
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="bg-zinc-900 border border-zinc-800 p-5">
+          <p className="text-xs text-zinc-500 mb-1.5 font-medium uppercase tracking-wide">Total Assets</p>
+          <p className="text-3xl font-bold text-white">{totalAssets}</p>
         </Card>
-        <Card className="bg-white border-2 border-slate-200/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <p className="text-sm text-slate-500 mb-2 font-medium">Pending</p>
-          <p className="text-4xl font-bold text-slate-600">{pendingCount}</p>
+        <Card className="bg-zinc-900 border border-zinc-800 p-5">
+          <p className="text-xs text-zinc-500 mb-1.5 font-medium uppercase tracking-wide">Pending</p>
+          <p className="text-3xl font-bold text-zinc-400">{pendingCount}</p>
         </Card>
-        <Card className="bg-white border-2 border-amber-200/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <p className="text-sm text-amber-700 mb-2 font-medium">In Progress</p>
-          <p className="text-4xl font-bold text-amber-600">{inProgressCount}</p>
+        <Card className="bg-zinc-900 border border-amber-900/40 p-5">
+          <p className="text-xs text-amber-500/70 mb-1.5 font-medium uppercase tracking-wide">In Progress</p>
+          <p className="text-3xl font-bold text-amber-400">{inProgressCount}</p>
         </Card>
-        <Card className="bg-white border-2 border-emerald-200/50 p-6 shadow-lg hover:shadow-xl transition-shadow">
-          <p className="text-sm text-emerald-700 mb-2 font-medium">Delivered</p>
-          <p className="text-4xl font-bold text-emerald-600">{deliveredCount}</p>
+        <Card className="bg-zinc-900 border border-emerald-900/40 p-5">
+          <p className="text-xs text-emerald-500/70 mb-1.5 font-medium uppercase tracking-wide">Delivered</p>
+          <p className="text-3xl font-bold text-emerald-400">{deliveredCount}</p>
         </Card>
       </div>
 
-      {/* Deliverables Table */}
-      <Card className="bg-white border-2 border-purple-200/50 shadow-lg overflow-hidden">
+      {/* Table */}
+      <Card className="bg-zinc-900 border border-zinc-800 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-purple-200/50 hover:bg-transparent bg-purple-50">
-              <TableHead className="w-12"></TableHead>
-              <TableHead className="text-slate-900 font-bold">Type</TableHead>
-              <TableHead className="text-slate-900 font-bold">Dimensions</TableHead>
-              <TableHead className="text-slate-900 font-bold">Platform</TableHead>
-              <TableHead className="text-slate-900 font-bold">Quantity</TableHead>
-              <TableHead className="text-slate-900 font-bold">Status</TableHead>
+            <TableRow className="border-zinc-800 hover:bg-transparent bg-zinc-800/50">
+              <TableHead className="w-10"></TableHead>
+              <TableHead className="text-zinc-400 font-semibold">Type</TableHead>
+              <TableHead className="text-zinc-400 font-semibold">Dimensions</TableHead>
+              <TableHead className="text-zinc-400 font-semibold">Platform</TableHead>
+              <TableHead className="text-zinc-400 font-semibold">Quantity</TableHead>
+              <TableHead className="text-zinc-400 font-semibold">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {deliverables.map((deliverable, index) => (
-              <TableRow key={deliverable.id} className="border-purple-100/50 hover:bg-purple-50/50">
+              <TableRow key={deliverable.id} className="border-zinc-800 hover:bg-zinc-800/40">
+                <TableCell>{getIcon(deliverable.type)}</TableCell>
                 <TableCell>
-                  {getIcon(deliverable.type)}
+                  <EditableField value={deliverable.type} onChange={v => updateItem(index, { type: v })} className="font-semibold text-zinc-300" />
                 </TableCell>
                 <TableCell>
-                  <EditableField
-                    value={deliverable.type}
-                    onChange={v => updateItem(index, { type: v })}
-                    className="font-bold text-slate-900"
-                  />
+                  <EditableField value={deliverable.dimensions} onChange={v => updateItem(index, { dimensions: v })} className="text-zinc-400 font-mono text-sm" />
                 </TableCell>
                 <TableCell>
-                  <EditableField
-                    value={deliverable.dimensions}
-                    onChange={v => updateItem(index, { dimensions: v })}
-                    className="text-slate-700 font-mono"
-                  />
-                </TableCell>
-                <TableCell>
-                  <EditableField
-                    value={deliverable.platform}
-                    onChange={v => updateItem(index, { platform: v })}
-                    className="text-slate-700"
-                  />
+                  <EditableField value={deliverable.platform} onChange={v => updateItem(index, { platform: v })} className="text-zinc-400" />
                 </TableCell>
                 <TableCell>
                   <input
@@ -133,15 +112,11 @@ export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
                     value={deliverable.quantity}
                     min={1}
                     onChange={e => updateItem(index, { quantity: parseInt(e.target.value) || 1 })}
-                    className="font-medium text-slate-900 bg-transparent outline-none border-b-2 border-transparent hover:border-purple-300 focus:border-purple-500 w-16 text-center"
+                    className="font-medium text-zinc-300 bg-transparent outline-none border-b border-transparent hover:border-zinc-600 focus:border-cyan-500 w-16 text-center"
                   />
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    className={getStatusColor(deliverable.status)}
-                    onClick={() => cycleStatus(index)}
-                    title="Click to change status"
-                  >
+                  <Badge className={getStatusColor(deliverable.status)} onClick={() => cycleStatus(index)} title="Click to change status">
                     {deliverable.status === 'in-progress' ? 'in progress' : deliverable.status}
                   </Badge>
                 </TableCell>
@@ -151,35 +126,20 @@ export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
         </Table>
       </Card>
 
-      {/* Delivery Notes */}
-      <Card className="bg-gradient-to-br from-purple-100 to-violet-100 border-2 border-purple-300/50 p-8 shadow-lg">
-        <div className="flex items-start gap-5">
-          <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-            <CheckCircle2 className="w-6 h-6 text-white" />
+      {/* Delivery Specs */}
+      <Card className="bg-zinc-900 border border-zinc-800 p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-cyan-400" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 mb-4 text-xl">Delivery Specifications</h3>
-            <ul className="text-slate-700 space-y-2 leading-relaxed">
-              <li className="flex items-start gap-3">
-                <span className="text-purple-600 font-bold mt-1">•</span>
-                <span>All images delivered as high-resolution JPG and RAW files</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-600 font-bold mt-1">•</span>
-                <span>Color profiles: sRGB for web, Adobe RGB for print</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-600 font-bold mt-1">•</span>
-                <span>Video files delivered as ProRes 422 HQ and H.264 web-optimized</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-600 font-bold mt-1">•</span>
-                <span>Assets organized by platform and format in cloud storage</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-600 font-bold mt-1">•</span>
-                <span>Final delivery includes usage rights documentation</span>
-              </li>
+            <h3 className="font-semibold text-white mb-3 text-base">Delivery Specifications</h3>
+            <ul className="text-zinc-500 space-y-2 text-sm leading-relaxed">
+              <li className="flex items-start gap-2"><span className="text-cyan-400 mt-0.5">•</span><span>All images delivered as high-resolution JPG and RAW files</span></li>
+              <li className="flex items-start gap-2"><span className="text-cyan-400 mt-0.5">•</span><span>Color profiles: sRGB for web, Adobe RGB for print</span></li>
+              <li className="flex items-start gap-2"><span className="text-cyan-400 mt-0.5">•</span><span>Video files delivered as ProRes 422 HQ and H.264 web-optimized</span></li>
+              <li className="flex items-start gap-2"><span className="text-cyan-400 mt-0.5">•</span><span>Assets organized by platform and format in cloud storage</span></li>
+              <li className="flex items-start gap-2"><span className="text-cyan-400 mt-0.5">•</span><span>Final delivery includes usage rights documentation</span></li>
             </ul>
           </div>
         </div>

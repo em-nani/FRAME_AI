@@ -15,9 +15,9 @@ const STATUS_CYCLE: TimelineItem['status'][] = ['not-started', 'in-progress', 'c
 
 function getStatusColor(status: string) {
   switch (status) {
-    case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
-    case 'in-progress': return 'bg-amber-100 text-amber-700 border-amber-300';
-    default: return 'bg-slate-100 text-slate-600 border-slate-300';
+    case 'completed': return 'bg-emerald-900/40 text-emerald-400 border-emerald-800 cursor-pointer';
+    case 'in-progress': return 'bg-amber-900/40 text-amber-400 border-amber-800 cursor-pointer';
+    default: return 'bg-zinc-800 text-zinc-400 border-zinc-700 cursor-pointer';
   }
 }
 
@@ -42,42 +42,42 @@ export default function PreProductionTimeline({ project, onUpdate }: PreProducti
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent mb-3">Pre-Production Timeline</h2>
-        <p className="text-slate-600 text-lg">Tasks and milestones leading up to the shoot</p>
+        <h2 className="text-3xl font-bold text-white mb-2">Pre-Production Timeline</h2>
+        <p className="text-zinc-500">Tasks and milestones leading up to the shoot</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {data.timeline.map((item, index) => (
-          <Card key={item.id} className="bg-white border-2 border-purple-200/50 p-6 shadow-lg hover:shadow-xl hover:border-purple-400 transition-all">
-            <div className="flex items-start gap-5">
-              <div className="mt-1.5">
+          <Card key={item.id} className="bg-zinc-900 border border-zinc-800 p-5 hover:border-zinc-700 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="mt-1">
                 <Checkbox
                   checked={item.status === 'completed'}
                   onCheckedChange={() => updateItem(index, {
                     status: item.status === 'completed' ? 'not-started' : 'completed'
                   })}
-                  className="border-2 border-purple-400 w-5 h-5 cursor-pointer"
+                  className="border-zinc-600 cursor-pointer"
                 />
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between mb-3 gap-4">
+                <div className="flex items-start justify-between mb-2 gap-4">
                   <div className="flex-1 min-w-0">
                     <EditableField
                       value={item.task}
                       onChange={v => updateItem(index, { task: v })}
-                      className="font-bold text-slate-900 text-lg block"
+                      className="font-semibold text-white block"
                     />
                     <EditableField
                       value={item.phase}
                       onChange={v => updateItem(index, { phase: v })}
-                      className="text-sm text-purple-600 font-medium block mt-1"
+                      className="text-sm text-cyan-400 block mt-0.5"
                     />
                   </div>
                   <Badge
-                    className={`${getStatusColor(item.status)} cursor-pointer shrink-0`}
+                    className={getStatusColor(item.status)}
                     onClick={() => cycleStatus(index)}
                     title="Click to change status"
                   >
@@ -85,24 +85,24 @@ export default function PreProductionTimeline({ project, onUpdate }: PreProducti
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-8 text-sm text-slate-600 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-purple-600 shrink-0" />
-                    <span className="font-medium">Due:</span>
+                <div className="flex items-center gap-6 text-sm text-zinc-500 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+                    <span className="text-zinc-600">Due:</span>
                     <input
                       type="date"
                       value={item.deadline}
                       onChange={e => updateItem(index, { deadline: e.target.value })}
-                      className="text-slate-600 bg-transparent outline-none border-b border-transparent hover:border-purple-300 focus:border-purple-500 cursor-pointer"
+                      className="text-zinc-400 bg-transparent outline-none border-b border-transparent hover:border-zinc-600 focus:border-cyan-500 cursor-pointer text-sm"
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-purple-600 shrink-0" />
-                    <span className="font-medium">Owner:</span>
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+                    <span className="text-zinc-600">Owner:</span>
                     <EditableField
                       value={item.owner}
                       onChange={v => updateItem(index, { owner: v })}
-                      className="text-slate-600"
+                      className="text-zinc-400 text-sm"
                     />
                   </div>
                 </div>
