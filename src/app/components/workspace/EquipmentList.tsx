@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Project, EquipmentItem } from '../../lib/types';
 import { Card } from '../ui/card';
 import { Checkbox } from '../ui/checkbox';
-import { Package } from 'lucide-react';
+import { Package, Plus, Trash2 } from 'lucide-react';
 import EditableField from './EditableField';
 
 interface EquipmentListProps {
   project: Project;
   onUpdate: (updates: Partial<Project>) => void;
 }
+
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 export default function EquipmentList({ project, onUpdate }: EquipmentListProps) {
   const [equipment, setEquipment] = useState<EquipmentItem[]>(() => project.equipment);
@@ -23,6 +25,13 @@ export default function EquipmentList({ project, onUpdate }: EquipmentListProps)
     e[index] = { ...e[index], ...changes };
     update(e);
   };
+
+  const addItem = (category: string) => update([
+    ...equipment,
+    { id: newId(), category, item: '', quantity: 1, notes: '', packed: false },
+  ]);
+
+  const deleteItem = (index: number) => update(equipment.filter((_, i) => i !== index));
 
   const categories = Array.from(new Set(equipment.map(e => e.category)));
   const groupedEquipment = categories.map(category => ({
@@ -47,10 +56,7 @@ export default function EquipmentList({ project, onUpdate }: EquipmentListProps)
           <span className="text-sm text-zinc-400">{packedCount} / {equipment.length} packed</span>
         </div>
         <div className="w-full bg-zinc-800 rounded-full h-2">
-          <div
-            className="bg-cyan-500 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
+          <div className="bg-cyan-500 h-2 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
       </Card>
 
@@ -65,10 +71,7 @@ export default function EquipmentList({ project, onUpdate }: EquipmentListProps)
           </h3>
           <div className="space-y-3">
             {items.map(({ item, index }) => (
-              <div
-                key={item.id}
-                className="flex items-start gap-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-colors"
-              >
+              <div key={item.id} className="group flex items-start gap-4 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-zinc-600 transition-colors">
                 <div className="mt-0.5">
                   <Checkbox
                     checked={item.packed}
@@ -76,14 +79,9 @@ export default function EquipmentList({ project, onUpdate }: EquipmentListProps)
                     className="border-zinc-600 cursor-pointer"
                   />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1 gap-4">
-                    <EditableField
-                      value={item.item}
-                      onChange={v => updateItem(index, { item: v })}
-                      className="font-semibold text-white"
-                    />
+                    <EditableField value={item.item} onChange={v => updateItem(index, { item: v })} className="font-semibold text-white" placeholder="Item name..." />
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs text-zinc-500">Qty</span>
                       <input
@@ -95,16 +93,17 @@ export default function EquipmentList({ project, onUpdate }: EquipmentListProps)
                       />
                     </div>
                   </div>
-                  <EditableField
-                    value={item.notes}
-                    onChange={v => updateItem(index, { notes: v })}
-                    className="text-sm text-zinc-500"
-                    placeholder="Add notes..."
-                  />
+                  <EditableField value={item.notes} onChange={v => updateItem(index, { notes: v })} className="text-sm text-zinc-500" placeholder="Add notes..." />
                 </div>
+                <button onClick={() => deleteItem(index)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg shrink-0 mt-0.5">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
           </div>
+          <button onClick={() => addItem(category)} className="mt-3 flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 border border-dashed border-zinc-700 hover:border-zinc-600 rounded-lg px-4 py-2.5 w-full transition-colors">
+            <Plus className="w-4 h-4" /> Add item to {category}
+          </button>
         </Card>
       ))}
     </div>

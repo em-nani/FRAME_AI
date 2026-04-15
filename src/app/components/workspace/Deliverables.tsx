@@ -3,7 +3,7 @@ import { Project, Deliverable } from '../../lib/types';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Image, Video, CheckCircle2 } from 'lucide-react';
+import { Image, Video, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import EditableField from './EditableField';
 
 interface DeliverablesProps {
@@ -12,6 +12,7 @@ interface DeliverablesProps {
 }
 
 const STATUS_CYCLE: Deliverable['status'][] = ['pending', 'in-progress', 'delivered'];
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -41,6 +42,13 @@ export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
     d[index] = { ...d[index], ...changes };
     update(d);
   };
+
+  const addDeliverable = () => update([
+    ...deliverables,
+    { id: newId(), type: 'Image', dimensions: '', platform: '', quantity: 1, status: 'pending' },
+  ]);
+
+  const deleteDeliverable = (index: number) => update(deliverables.filter((_, i) => i !== index));
 
   const cycleStatus = (index: number) => {
     const current = deliverables[index].status;
@@ -85,26 +93,27 @@ export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
         <Table>
           <TableHeader>
             <TableRow className="border-zinc-800 hover:bg-transparent bg-zinc-800/50">
-              <TableHead className="w-10"></TableHead>
+              <TableHead className="w-10" />
               <TableHead className="text-zinc-400 font-semibold">Type</TableHead>
               <TableHead className="text-zinc-400 font-semibold">Dimensions</TableHead>
               <TableHead className="text-zinc-400 font-semibold">Platform</TableHead>
               <TableHead className="text-zinc-400 font-semibold">Quantity</TableHead>
               <TableHead className="text-zinc-400 font-semibold">Status</TableHead>
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {deliverables.map((deliverable, index) => (
-              <TableRow key={deliverable.id} className="border-zinc-800 hover:bg-zinc-800/40">
+              <TableRow key={deliverable.id} className="group border-zinc-800 hover:bg-zinc-800/40">
                 <TableCell>{getIcon(deliverable.type)}</TableCell>
                 <TableCell>
-                  <EditableField value={deliverable.type} onChange={v => updateItem(index, { type: v })} className="font-semibold text-zinc-300" />
+                  <EditableField value={deliverable.type} onChange={v => updateItem(index, { type: v })} className="font-semibold text-zinc-300" placeholder="Type..." />
                 </TableCell>
                 <TableCell>
-                  <EditableField value={deliverable.dimensions} onChange={v => updateItem(index, { dimensions: v })} className="text-zinc-400 font-mono text-sm" />
+                  <EditableField value={deliverable.dimensions} onChange={v => updateItem(index, { dimensions: v })} className="text-zinc-400 font-mono text-sm" placeholder="e.g. 1080×1080" />
                 </TableCell>
                 <TableCell>
-                  <EditableField value={deliverable.platform} onChange={v => updateItem(index, { platform: v })} className="text-zinc-400" />
+                  <EditableField value={deliverable.platform} onChange={v => updateItem(index, { platform: v })} className="text-zinc-400" placeholder="Platform..." />
                 </TableCell>
                 <TableCell>
                   <input
@@ -120,10 +129,20 @@ export default function Deliverables({ project, onUpdate }: DeliverablesProps) {
                     {deliverable.status === 'in-progress' ? 'in progress' : deliverable.status}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  <button onClick={() => deleteDeliverable(index)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        <div className="p-3 border-t border-zinc-800">
+          <button onClick={addDeliverable} className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 border border-dashed border-zinc-700 hover:border-zinc-600 rounded-lg px-4 py-2.5 w-full transition-colors">
+            <Plus className="w-4 h-4" /> Add deliverable
+          </button>
+        </div>
       </Card>
 
       {/* Delivery Specs */}

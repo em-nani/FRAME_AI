@@ -19,6 +19,7 @@ import Deliverables from '../components/workspace/Deliverables';
 import { useCallback, useRef, useState } from 'react';
 import { Project } from '../lib/types';
 import EditableField from '../components/workspace/EditableField';
+import ProjectPrint from '../components/workspace/ProjectPrint';
 
 type SaveState = 'idle' | 'pending' | 'saved';
 
@@ -77,13 +78,21 @@ export default function Workspace() {
     );
   }
 
-  const handleExportPDF = () => alert('PDF export coming soon!');
+  const handleExportPDF = () => window.print();
+
+  const PROJECT_STATUS_CYCLE: Project['status'][] = ['planning', 'in-progress', 'completed'];
+
+  const cycleProjectStatus = () => {
+    const current = currentProject.status;
+    const next = PROJECT_STATUS_CYCLE[(PROJECT_STATUS_CYCLE.indexOf(current) + 1) % PROJECT_STATUS_CYCLE.length];
+    handleUpdate({ status: next });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'planning': return 'bg-zinc-800 text-zinc-300 border-zinc-700';
       case 'in-progress': return 'bg-cyan-900/40 text-cyan-300 border-cyan-800';
-      case 'completed': return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+      case 'completed': return 'bg-emerald-900/40 text-emerald-300 border-emerald-800';
       default: return 'bg-zinc-800 text-zinc-400 border-zinc-700';
     }
   };
@@ -100,7 +109,9 @@ export default function Workspace() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <>
+    <div className="hidden print:block"><ProjectPrint project={currentProject} /></div>
+    <div className="min-h-screen bg-zinc-950 print:hidden">
       {/* Header */}
       <header className="border-b border-zinc-800 bg-black/90 backdrop-blur-md sticky top-0 z-10">
         <div className="mx-auto max-w-7xl px-6 py-5">
@@ -162,7 +173,11 @@ export default function Workspace() {
                 />
               </p>
             </div>
-            <Badge className={`${getStatusColor(currentProject.status)} border text-xs px-3 py-1.5 rounded-full`}>
+            <Badge
+              onClick={cycleProjectStatus}
+              className={`${getStatusColor(currentProject.status)} border text-xs px-3 py-1.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity`}
+              title="Click to change status"
+            >
               {currentProject.status}
             </Badge>
           </div>
@@ -196,5 +211,6 @@ export default function Workspace() {
         </Tabs>
       </main>
     </div>
+    </>
   );
 }
