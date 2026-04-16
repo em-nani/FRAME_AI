@@ -21,7 +21,7 @@ const CREATE_PROJECT_TOOL: Anthropic.Tool = {
       },
       moodBoard: {
         type: 'object',
-        required: ['colorPalette', 'keywords', 'aesthetic'],
+        required: ['colorPalette', 'keywords', 'aesthetic', 'imageQueries'],
         properties: {
           colorPalette: {
             type: 'array',
@@ -40,6 +40,13 @@ const CREATE_PROJECT_TOOL: Anthropic.Tool = {
           aesthetic: {
             type: 'string',
             description: 'One-line aesthetic summary, e.g. "Moody editorial with film grain and high contrast"',
+          },
+          imageQueries: {
+            type: 'array',
+            description: 'Exactly 6 short Unsplash search queries (2–4 words each) that would return images matching the mood and aesthetic. Be specific and visual, e.g. ["moody fashion editorial", "dark luxury clothing", "film grain portrait", "urban rooftop fashion", "high contrast black white", "dramatic lighting model"]',
+            items: { type: 'string' },
+            minItems: 6,
+            maxItems: 6,
           },
         },
       },
@@ -293,7 +300,9 @@ Guidelines:
       createdAt: now,
       status: 'planning' as const,
       moodBoard: {
-        images: [],           // populated later when image search is wired up
+        images: (generated.moodBoard.imageQueries as string[]).map(
+          (q: string) => `https://source.unsplash.com/800x800/?${encodeURIComponent(q)}`
+        ),
         colorPalette: generated.moodBoard.colorPalette,
         keywords: generated.moodBoard.keywords,
         aesthetic: generated.moodBoard.aesthetic,
