@@ -9,7 +9,7 @@ import {
   Link as LinkIcon, File, X, Paperclip, ChevronDown, ChevronUp,
   Users, Camera, DollarSign, Palette, Clock, CheckSquare
 } from 'lucide-react';
-import { generateProjectFromPrompt } from '../lib/ai-mock';
+import { generateProjectFromPrompt } from '../lib/generate';
 import { useProjects } from '../lib/project-context';
 import { Attachment } from '../lib/types';
 
