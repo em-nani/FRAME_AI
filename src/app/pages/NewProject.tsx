@@ -33,25 +33,29 @@ export default function NewProject() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
   const [generatingStep, setGeneratingStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
     setGeneratingStep(0);
-    
+    setError(null);
+
     const stepInterval = setInterval(() => {
       setGeneratingStep(s => Math.min(s + 1, generatingSteps.length - 1));
-    }, 350);
+    }, 1800);
 
     try {
       const project = await generateProjectFromPrompt(prompt);
       project.attachments = attachments;
       addProject(project);
       clearInterval(stepInterval);
+      setGeneratingStep(generatingSteps.length - 1);
       navigate(`/workspace/${project.id}`);
-    } catch (error) {
-      console.error('Error generating project:', error);
+    } catch (err) {
+      console.error('Error generating project:', err);
       clearInterval(stepInterval);
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -295,6 +299,25 @@ export default function NewProject() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Error */}
+        {error && !isGenerating && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-950/50 border border-red-900 rounded-2xl p-6 mb-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 rounded-lg bg-red-900/60 flex items-center justify-center shrink-0 mt-0.5">
+                <X className="w-3.5 h-3.5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-red-300 text-sm font-medium mb-1">Generation failed</p>
+                <p className="text-red-400/70 text-sm">{error}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Tips */}
         {!isGenerating && (
